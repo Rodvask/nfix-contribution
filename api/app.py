@@ -5,7 +5,7 @@ Trade-level fields are rejected by the schema. No client IPs are read,
 logged, or stored anywhere in this service.
 """
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import psycopg
 from fastapi import FastAPI, HTTPException
@@ -37,6 +37,25 @@ CREATE TABLE IF NOT EXISTS pulses (
 """
 
 app = FastAPI(title="nfix-contribution")
+
+DDL_EVENTS = """
+CREATE TABLE IF NOT EXISTS events (
+  install_id TEXT NOT NULL,
+  hour TIMESTAMPTZ NOT NULL,
+  strategy_version TEXT NOT NULL,
+  exchange TEXT NOT NULL,
+  market TEXT NOT NULL,
+  dry_run BOOLEAN NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('open','close')),
+  tag TEXT NOT NULL,
+  pair TEXT NOT NULL,
+  side TEXT NOT NULL CHECK (side IN ('long','short')),
+  profit_pct DOUBLE PRECISION,
+  duration_min DOUBLE PRECISION,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS events_hour_idx ON events (hour);
+"""
 
 
 def db():
@@ -70,6 +89,7 @@ class PulseIn(BaseModel):
 def init():
     with db() as conn, conn.cursor() as cur:
         cur.execute(DDL)
+        cur.execute(DDL_EVENTS)
 
 
 @app.get("/health")
@@ -77,7 +97,65 @@ def health():
     return {"ok": True}
 
 
-@app.post("/v1/pulse", status_code=202)
+class LiveEvent(BaseModel):
+    # Real-time count events. No prices, stakes, balances, or exact
+    # timestamps: `hour` is a UTC hour bucket, never the fill time.
+    install_id: str = Field(pattern=r"^[0-9a-f-]{36}$")
+    hour: datetime
+    strategy_version: str = Field(max_length=64)
+    exchange: str = Field(max_length=32)
+    market: str = Field(max_length=16)
+    dry_run: bool
+    kind: str = Field(pattern="^(open|close)$")
+    tag: str = Field(max_length=32)
+    pair: str = Field(max_length=32)
+    side: str = Field(pattern="^(long|short)$")
+    profit_pct: float | None = Field(default=None, gt=-100, lt=10000)
+    duration_min: float | None = Field(default=None, ge=0, lt=525600)
+
+    model_config = {"extra": "forbid"}
+
+
+@app.post("/v1/event", status_code=202)
+def ingest_event(e: LiveEvent):
+    with db() as conn, conn.cursor() as cur:
+        # Real-time data must not accumulate: keep 48h max.
+        cur.execute("DELETE FROM events WHERE created_at < now() - interval '48 hours'")
+        cur.execute(
+            """INSERT INTO events
+               (install_id, hour, strategy_version, exchange, market, dry_run,
+                kind, tag, pair, side, profit_pct, duration_min)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (e.install_id, e.hour, e.strategy_version, e.exchange, e.market,
+             e.dry_run, e.kind, e.tag, e.pair, e.side,
+             e.profit_pct, e.duration_min),
+        )
+    return {"accepted": 1}
+
+
+@app.get("/v1/pulse")
+def pulse(strategy_version: str, hours: int = 24):
+    """Crowd counts per tag x pair over the last `hours` (max 48).
+    Pairs with fewer than MIN_INSTALLS distinct installs are suppressed."""
+    hours = max(1, min(hours, 48))
+    with db() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT tag, pair, side,
+                      SUM(CASE WHEN kind='open' THEN 1 ELSE 0 END) AS opens,
+                      SUM(CASE WHEN kind='close' THEN 1 ELSE 0 END) AS closes,
+                      AVG(profit_pct) FILTER (WHERE kind='close') AS avg_close_pct,
+                      COUNT(DISTINCT install_id) AS installs
+               FROM events
+               WHERE strategy_version = %s
+                 AND created_at >= now() - make_interval(hours => %s)
+               GROUP BY tag, pair, side""",
+            (strategy_version, hours),
+        )
+        rows = cur.fetchall()
+    out = [{"tag": t, "pair": p, "side": s, "opens": o, "closes": c,
+             "avg_close_pct": round(a, 2) if a is not None else None}
+           for t, p, s, o, c, a, n in rows if n >= MIN_INSTALLS]
+    return {"rows": sorted(out, key=lambda r: (-r["opens"], r["pair"]))}
 def ingest(p: PulseIn):
     if any(t.wins > t.fires for t in p.tags):
         raise HTTPException(422, "wins must not exceed fires")
