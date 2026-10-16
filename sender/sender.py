@@ -21,7 +21,7 @@ import urllib.request
 import uuid
 import zipfile
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 ID_FILE = Path.home() / ".nfix-contribution" / "install_id"
@@ -98,7 +98,7 @@ def main() -> int:
     buckets: dict = defaultdict(list)
     for t in trades:
         iso = t["close"].astimezone(timezone.utc).isocalendar()
-        week = f"{iso.year}-{iso.week:02d}-1"
+        week = date.fromisocalendar(iso.year, iso.week, 1).isoformat()
         buckets[(week, t["tag"], "short" if t["short"] else "long")].append(t)
 
     iid = install_id()
