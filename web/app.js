@@ -14,7 +14,22 @@ async function load() {
   const all = (await r.json()).rows || [];
   rows = $("realonly").checked ? all.filter((x) => !x.dry_run) : all;
   render();
+  loadPulse();
 }
+
+async function loadPulse() {
+  try {
+    const q = new URLSearchParams({ strategy_version: $("strategy").value.trim(), hours: "24" });
+    const r = await fetch("/v1/pulse?" + q);
+    const data = ((await r.json()).rows || []).slice(0, 20);
+    document.querySelector("#tblp tbody").innerHTML = data.map((x) =>
+      `<tr><td>${x.tag}</td><td>${x.pair}</td><td>${x.side}</td><td>${x.opens}</td>` +
+      `<td>${x.closes}</td><td>${x.avg_close_pct === null ? "—" : (x.avg_close_pct >= 0 ? "+" : "") + x.avg_close_pct.toFixed(2) + "%"}</td></tr>`).join("");
+    $("emptyp").hidden = data.length > 0;
+  } catch { $("emptyp").hidden = false; }
+}
+
+setInterval(loadPulse, 5 * 60 * 1000);
 
 function render() {
   const fires = rows.reduce((a, r) => a + r.fires, 0);
