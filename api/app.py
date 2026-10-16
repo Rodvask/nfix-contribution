@@ -9,6 +9,7 @@ from datetime import date, timedelta
 
 import psycopg
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 DATABASE_URL = os.environ["DATABASE_URL"]
@@ -130,3 +131,7 @@ def leaderboard(strategy_version: str, exchange: str = "", weeks: int = 12):
             "installs": installs,
         })
     return {"rows": sorted(out, key=lambda r: (r["fires"], r["tag"]), reverse=True)}
+
+
+# Dashboard (static). Mounted last so /v1/* and /health keep priority.
+app.mount("/", StaticFiles(directory="web", html=True), name="web")
