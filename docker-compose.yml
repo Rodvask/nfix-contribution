@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nfix}
+      POSTGRES_USER: ${POSTGRES_USER:-nfix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-nfix}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-nfix}
+      MIN_INSTALLS: ${MIN_INSTALLS:-3}
+      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+    ports:
+      - "${API_PORT:-8090}:8000"
+    # No access logs are emitted by the app (see Dockerfile CMD --no-access-log).
+    # No reverse proxy in front: nothing on this stack records client IPs.
+
+volumes:
+  pgdata:
