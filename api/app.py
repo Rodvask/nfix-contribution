@@ -156,6 +156,7 @@ def pulse(strategy_version: str, hours: int = 24):
              "avg_close_pct": round(a, 2) if a is not None else None}
            for t, p, s, o, c, a, n in rows if n >= MIN_INSTALLS]
     return {"rows": sorted(out, key=lambda r: (-r["opens"], r["pair"]))}
+@app.post("/v1/pulse", status_code=202)
 def ingest(p: PulseIn):
     if any(t.wins > t.fires for t in p.tags):
         raise HTTPException(422, "wins must not exceed fires")
