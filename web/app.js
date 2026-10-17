@@ -118,6 +118,7 @@ function draw(data) {
   if (chart) chart.destroy();
   const pts = data.filter((r) => r.fires >= 3).map((r) => ({
     x: r.fires, y: +(r.win_rate * 100).toFixed(1),
+    r: 4 + Math.sqrt(r.fires) * 1.6,
     tag: r.tag, wr: r.win_rate,
   }));
   chart = new Chart($("chTags"), {
