@@ -34,7 +34,18 @@
 </header>
 
 <main class="wrap">
+  <p class="fresh" id="fresh"></p>
   <section class="kpis" id="kpis"></section>
+  <section class="card" id="detail" hidden>
+    <p class="back"><a href="#" id="backlink">← all tags</a></p>
+    <h2 id="dtitle"></h2>
+    <p class="hint" id="dtotals"></p>
+    <div class="chart"><canvas id="chTrend"></canvas></div>
+    <div class="tblwrap"><table id="tbld">
+      <thead><tr><th>week</th><th>exchange</th><th>fires</th><th>win rate</th><th>avg %</th><th>avg dur</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+  </section>
   <section class="grid">
     <div class="card wide">
       <h2>Win rate by tag</h2>
