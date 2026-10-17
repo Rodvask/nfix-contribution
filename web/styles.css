@@ -19,9 +19,10 @@ h1{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;margin:6
   border-radius:10px;padding:9px 12px;font:500 13px Inter}
 .filters input{font-family:var(--mono);width:230px}
 .chk{color:var(--mut);font-size:13px;display:flex;gap:6px;align-items:center;accent-color:var(--acc)}
-.kpis{display:grid
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 18px}
+.fresh{color:var(--mut);font:12.5px var(--mono);margin:2px 0 10px}
 .back{margin-bottom:6px}
-.back a{color:var(--acc);text-decoration:none;font-size:13px};grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 18px}
+.back a{color:var(--acc);text-decoration:none;font-size:13px}
 .kpi{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
   border-radius:14px;padding:14px 16px}
 .kpi b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -33,15 +34,18 @@ h1{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;margin:6
   border-radius:16px;padding:18px;margin-bottom:14px}
 .card h2{font-size:16px;font-weight:700}
 .hint{color:var(--mut);font-size:12.5px;margin:2px 0 12px}
-.chart{height:300px}
+.chart{height:300px;position:relative}
+.taglink{color:var(--txt);text-decoration:underline dotted;text-underline-offset:3px}
+.taglink:hover{color:var(--acc)}
 .worst{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
 .worst li{display:flex;justify-content:space-between;align-items:center;background:#0e1320;
   border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-family:var(--mono);font-size:13px}
 .worst .wr{font-weight:600}.wr.bad{color:var(--bad)}.wr.warn{color:var(--warn)}.wr.good{color:var(--acc)}
 .tblwrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+#tbl th{cursor:pointer}
 th{color:var(--mut);text-align:right;font-weight:600;font-size:12px;text-transform:uppercase;
-  letter-spacing:.06em;padding:8px 10px;cursor:pointer;user-select:none;white-space:nowrap}
+  letter-spacing:.06em;padding:8px 10px;user-select:none;white-space:nowrap}
 th:first-child,td:first-child{text-align:left}
 td{padding:8px 10px;text-align:right;border-top:1px solid var(--line);font-family:var(--mono)}
 tbody tr:hover td{background:#ffffff08}
