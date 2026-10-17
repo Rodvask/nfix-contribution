@@ -19,7 +19,9 @@ h1{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;margin:6
   border-radius:10px;padding:9px 12px;font:500 13px Inter}
 .filters input{font-family:var(--mono);width:230px}
 .chk{color:var(--mut);font-size:13px;display:flex;gap:6px;align-items:center;accent-color:var(--acc)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 18px}
+.kpis{display:grid
+.back{margin-bottom:6px}
+.back a{color:var(--acc);text-decoration:none;font-size:13px};grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:14px 0 18px}
 .kpi{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);
   border-radius:14px;padding:14px 16px}
 .kpi b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
