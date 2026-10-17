@@ -156,6 +156,52 @@ def pulse(strategy_version: str, hours: int = 24):
              "avg_close_pct": round(a, 2) if a is not None else None}
            for t, p, s, o, c, a, n in rows if n >= MIN_INSTALLS]
     return {"rows": sorted(out, key=lambda r: (-r["opens"], r["pair"]))}
+@app.get("/v1/tag")
+def tag_detail(strategy_version: str, tag: str, weeks: int = 26):
+    """Drill-down for one tag: weekly series per exchange plus totals."""
+    with db() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT week, exchange, market, dry_run,
+                      SUM(fires) AS fires, SUM(wins) AS wins,
+                      AVG(avg_profit_pct) AS avg_profit_pct,
+                      AVG(avg_duration_min) AS avg_duration_min,
+                      COUNT(DISTINCT install_id) AS installs
+               FROM pulses
+               WHERE strategy_version = %s AND tag = %s
+                 AND week >= CURRENT_DATE - make_interval(weeks => %s)
+               GROUP BY week, exchange, market, dry_run
+               ORDER BY week""",
+            (strategy_version, tag, weeks),
+        )
+        rows = cur.fetchall()
+    series = [{"week": str(w), "exchange": e, "market": m, "dry_run": d,
+               "fires": f, "wins": wn,
+               "win_rate": round(wn / f, 4) if f else 0,
+               "avg_profit_pct": round(a, 2),
+               "avg_duration_min": round(ad, 1), "installs": n}
+              for w, e, m, d, f, wn, a, ad, n in rows if n >= MIN_INSTALLS]
+    tot_f = sum(r["fires"] for r in series)
+    tot_w = sum(r["wins"] for r in series)
+    tot_pts = sum(r["avg_profit_pct"] * r["fires"] for r in series)
+    return {"tag": tag, "series": series,
+            "totals": {"fires": tot_f, "wins": tot_w,
+                         "win_rate": round(tot_w / tot_f, 4) if tot_f else 0,
+                         "total_pct_points": round(tot_pts, 1),
+                         "avg_pct_per_fire": round(tot_pts / tot_f, 2) if tot_f else 0}}
+@app.get("/v1/meta")
+def meta(strategy_version: str):
+    with db() as conn, conn.cursor() as cur:
+        cur.execute(
+            """SELECT COUNT(*), COUNT(DISTINCT install_id), MAX(created_at)
+               FROM pulses WHERE strategy_version = %s""",
+            (strategy_version,),
+        )
+        buckets, installs, last = cur.fetchone()
+    return {"buckets": buckets, "installs": installs,
+            "last_seen": last.isoformat() if last else None,
+            "min_installs": MIN_INSTALLS}
+
+
 @app.post("/v1/pulse", status_code=202)
 def ingest(p: PulseIn):
     if any(t.wins > t.fires for t in p.tags):
