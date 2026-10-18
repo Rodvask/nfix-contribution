@@ -1,3 +1,6 @@
 .env
 __pycache__/
 *.pyc
+
+# runtime data: raw reports and generated fixtures never belong in git
+data/

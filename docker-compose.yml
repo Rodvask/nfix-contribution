@@ -9,27 +9,48 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
+    build: .
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-nfix}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-nfix}
+      DASHBOARD_TOKEN: ${DASHBOARD_TOKEN:-}
       MIN_INSTALLS: ${MIN_INSTALLS:-3}
-      RETENTION_DAYS: ${RETENTION_DAYS:-90}
+    volumes:
+      - ./api:/app/api:ro
+      - ./web:/app/web:ro
+      - ./db:/app/db:ro
     ports:
       - "${API_PORT:-8090}:8000"
-    # No access logs are emitted by the app (see Dockerfile CMD --no-access-log).
-    # No reverse proxy in front: nothing on this stack records client IPs.
+    # Access logs disabled: nothing on this stack records client IPs.
+    command: ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+
+  ingest:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-nfix}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-nfix}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_CHANNEL_ID: ${DISCORD_CHANNEL_ID:-}
+      POLL_SECONDS: ${POLL_SECONDS:-900}
+      INITIAL_LOOKBACK: ${INITIAL_LOOKBACK:-200}
+      RAW_DIR: /data/raw
+    volumes:
+      - ./ingest:/app/ingest:ro
+      - ./db:/app/db:ro
+      - ./data:/data
+    command: ["python", "-m", "ingest.discord_ingest"]
 
 volumes:
   pgdata:
