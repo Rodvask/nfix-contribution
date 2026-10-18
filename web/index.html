@@ -1,87 +1,46 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>nfix-contribution · Strategy Telemetry</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<title>NFI community telemetry</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="bg"></div>
-<header class="wrap head">
-  <div>
-    <p class="eyebrow">NostalgiaForInfinity · community telemetry</p>
-    <h1>Which signals earn their keep?</h1>
-    <p class="sub">Anonymous aggregate only — win rate per entry tag × exchange. No stakes, no wallets, no identities.</p>
+<header>
+  <div class="brand">
+    <span class="dot"></span>
+    <div>
+      <h1>NFI · community telemetry</h1>
+      <div class="sub" id="meta-line">cargando…</div>
+    </div>
   </div>
   <div class="filters">
-    <input id="strategy" value="NostalgiaForInfinityX8" spellcheck="false" aria-label="Strategy">
-    <select id="exchange" aria-label="Exchange">
-      <option value="">All exchanges</option>
-      <option>binance</option><option>bybit</option><option>kucoin</option><option>bitget</option>
-    </select>
-    <select id="weeks" aria-label="Window">
-      <option value="4">4 weeks</option>
-      <option value="12" selected>12 weeks</option>
-      <option value="26">26 weeks</option>
-      <option value="200">All history</option>
-    </select>
-    <label class="chk"><input type="checkbox" id="realonly" checked> real money only</label>
+    <label>Días <select id="f-days">
+      <option value="7">7</option><option value="30" selected>30</option><option value="90">90</option>
+      <option value="365">365</option><option value="0">todo</option>
+    </select></label>
+    <label>Versión <select id="f-version"><option value="">todas</option></select></label>
+    <label>Sistema <select id="f-system"><option value="">todos</option></select></label>
+    <label>Lado <select id="f-side">
+      <option value="">ambos</option><option value="long">long</option><option value="short">short</option>
+    </select></label>
+    <label>Exchange <select id="f-exchange"><option value="">todos</option></select></label>
+    <label>Token <input id="f-token" type="password" autocomplete="off" placeholder="para detalle"></label>
+    <button id="refresh">Actualizar</button>
   </div>
 </header>
 
-<main class="wrap">
-  <p class="fresh" id="fresh"></p>
-  <section class="kpis" id="kpis"></section>
-  <section class="card" id="detail" hidden>
-    <p class="back"><a href="#" id="backlink">← all tags</a></p>
-    <h2 id="dtitle"></h2>
-    <p class="hint" id="dtotals"></p>
-    <div class="chart"><canvas id="chTrend"></canvas></div>
-    <div class="tblwrap"><table id="tbld">
-      <thead><tr><th>week</th><th>exchange</th><th>fires</th><th>win rate</th><th>avg %</th><th>avg dur</th></tr></thead>
-      <tbody></tbody>
-    </table></div>
-  </section>
-  <section class="grid">
-    <div class="card wide">
-      <h2>Win rate by tag</h2>
-      <p class="hint">Bubble size = fires. Red = below 90%.</p>
-      <div class="chart"><canvas id="chTags"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Worst offenders</h2>
-      <p class="hint">Lowest win rate, min 5 fires.</p>
-      <ol class="worst" id="worst"></ol>
-    </div>
-  </section>
-  <section class="card">
-    <h2>Live pulse · last 24h</h2>
-    <p class="hint">Crowd opens/closes per tag × pair. Only groups with 3+ installs are shown.</p>
-    <div class="tblwrap"><table id="tblp">
-      <thead><tr><th>tag</th><th>pair</th><th>side</th><th>opens</th><th>closes</th><th>avg close %</th></tr></thead>
-      <tbody></tbody>
-    </table></div>
-    <p class="empty" id="emptyp" hidden>No crowd data in the last 24h.</p>
-  </section>
-  <section class="card">
-    <h2>Tag × exchange</h2>
-    <p class="hint">Click a column to sort.</p>
-    <div class="tblwrap"><table id="tbl">
-      <thead><tr>
-        <th data-k="tag">tag</th><th data-k="exchange">exchange</th>
-        <th data-k="fires">fires</th><th data-k="win_rate">win&nbsp;rate</th>
-        <th data-k="avg_profit_pct">avg&nbsp;%</th><th data-k="avg_duration_min">avg&nbsp;dur</th>
-      </tr></thead>
-      <tbody></tbody>
-    </table></div>
-    <p class="empty" id="empty" hidden>No rows — groups with fewer than 3 distinct installs are suppressed for anonymity.</p>
-  </section>
-  <footer>Aggregates only · raw rows expire after 90 days · <a href="https://github.com/Rodvask/nfix-contribution">repo</a></footer>
+<nav id="tabs"></nav>
+
+<main>
+  <section id="view"><p class="muted">Cargando…</p></section>
 </main>
+
+<footer>
+  <span id="foot-note">Datos agregados de instalaciones que envían el reporte diario anónimo. Ninguna clave, IP ni nombre de bot viaja ni se guarda.</span>
+</footer>
+
 <script src="app.js"></script>
 </body>
 </html>
